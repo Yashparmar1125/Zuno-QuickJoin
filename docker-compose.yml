@@ -5,7 +5,7 @@ services:
     build:
       context: ./Backend
       dockerfile: Dockerfile
-    container_name: vynce-backend
+    container_name: zuno-backend
     ports:
       - "5000:5000"
     environment:
@@ -22,7 +22,7 @@ services:
     build:
       context: ./Frontend
       dockerfile: Dockerfile
-    container_name: vynce-frontend
+    container_name: zuno-frontend
     ports:
       - "5173:5173"
     environment:

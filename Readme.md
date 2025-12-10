@@ -418,6 +418,19 @@ JWT_REFRESH_EXPIRE=7d
    - Check MongoDB connection
    - Ensure meeting exists in database
 
+## 🧪 Testing Guide
+
+**Testing with Multiple Participants:**
+
+Since you only have one camera, here are ways to test with multiple participants:
+
+1. **Multiple Browsers**: Use Chrome + Firefox (or Chrome + Chrome Incognito)
+2. **Multiple Devices**: Use your phone/tablet on the same WiFi network
+3. **Browser Profiles**: Create multiple Chrome profiles
+4. **Virtual Cameras**: Use OBS Virtual Camera or similar tools
+
+📖 **See [TESTING.md](./TESTING.md) for detailed testing instructions**
+
 ## 🤝 Contributing
 
 1. 🍴 Fork the repository  
