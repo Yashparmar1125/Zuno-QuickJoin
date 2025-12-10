@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  :root {
+    font-family: 'Inter', 'Open Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    background-color: #F6F9FF;
+    color: #1A202C;
+  }
+
+  body {
+    @apply bg-[var(--bg,theme(colors.zuno.soft))] text-zuno-charcoal antialiased min-h-screen;
+    margin: 0;
+  }
+
+  a {
+    @apply text-inherit no-underline;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold text-zuno-charcoal;
+  }
+}
