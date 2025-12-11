@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://zunoquickjoin.vercel.app/sitemap.xml

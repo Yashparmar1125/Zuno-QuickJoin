@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Landing Page -->
+  <url>
+    <loc>https://zunoquickjoin.vercel.app/</loc>
+    <lastmod>2025-01-01</lastmod>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Call Ended Page -->
+  <url>
+    <loc>https://zunoquickjoin.vercel.app/call-ended</loc>
+    <lastmod>2025-01-01</lastmod>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Dashboard (protected – optional to index OR add noindex in the route) -->
+  <url>
+    <loc>https://zunoquickjoin.vercel.app/dashboard</loc>
+    <lastmod>2025-01-01</lastmod>
+    <priority>0.3</priority>
+  </url>
+
+  <!-- Meeting details (protected – optional, low priority) -->
+  <url>
+    <loc>https://zunoquickjoin.vercel.app/meeting/example/details</loc>
+    <lastmod>2025-01-01</lastmod>
+    <priority>0.2</priority>
+  </url>
+
+</urlset>

@@ -9,10 +9,12 @@ import MeetingDetails from './pages/MeetingDetails';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import './index.css';
+import { Analytics } from "@vercel/analytics/react"
 
 function App() {
   return (
     <Router>
+      <Analytics />
       <AuthProvider>
         <div className="min-h-screen flex flex-col bg-zuno-soft text-zuno-charcoal">
           <Routes>
