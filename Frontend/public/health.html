@@ -1,0 +1,366 @@
+<!--
+  Zuno Health Dashboard
+  Single-file HTML dashboard that fetches health data from
+  https://zuno.helloyashparmar.dev/api/health
+
+  Features:
+  - Clean, responsive UI
+  - Status badges, uptime, timestamp
+  - System overview: CPU, Memory, Disk, Event Loop
+  - Services status (Mongo, Firebase, Config)
+  - Raw JSON viewer with copy button
+  - Auto-refresh toggle and manual refresh
+  - Error handling and visual indicators
+
+  Usage: save as zuno-health-dashboard.html and open in browser.
+  If the endpoint blocks CORS, run a simple local proxy or open via a dev server.
+-->
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zuno — Health Dashboard</title>
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --muted:#98a0b3; --accent:#6ee7b7; --danger:#ff7a7a; --glass: rgba(255,255,255,0.03);
+      --glass-2: rgba(255,255,255,0.02);
+      --glass-border: rgba(255,255,255,0.04);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071126 0%, #07111a 60%);color:#e6eef8}
+    .wrap{max-width:1100px;margin:28px auto;padding:20px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+    h1{margin:0;font-size:20px;letter-spacing:0.2px}
+    .sub{color:var(--muted);font-size:13px}
+    .controls{display:flex;gap:8px;align-items:center}
+    button{background:var(--glass);border:1px solid var(--glass-border);padding:8px 12px;border-radius:10px;color:inherit;cursor:pointer}
+    .btn-primary{background:linear-gradient(90deg,#0ea5a0,#34d399);color:#022; font-weight:600}
+    .btn-ghost{background:transparent;border:1px dashed rgba(255,255,255,0.04)}
+    .grid{display:grid;grid-template-columns:1fr 380px;gap:18px;margin-top:18px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid var(--glass-border);padding:16px;border-radius:12px}
+    .row{display:flex;gap:12px;align-items:center}
+    .stat{display:flex;flex-direction:column}
+    .stat .label{font-size:12px;color:var(--muted)}
+    .stat .value{font-size:18px;font-weight:700}
+    .badge{padding:6px 10px;border-radius:999px;font-weight:600;font-size:13px}
+    .badge.ok{background:linear-gradient(90deg,#10b981,#34d399);color:#042}
+    .badge.fail{background:linear-gradient(90deg,#ef4444,#fb7185);color:#2b0404}
+    .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+    .metric-card{background:var(--glass-2);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02)}
+    pre{background:#031026;padding:12px;border-radius:8px;overflow:auto;color:#cfeef4}
+    .services{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+    .service{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border:1px solid rgba(255,255,255,0.02)}
+    .small{font-size:12px;color:var(--muted)}
+    .progress{height:10px;background:rgba(255,255,255,0.03);border-radius:999px;overflow:hidden}
+    .progress > i{display:block;height:100%;background:linear-gradient(90deg,#06b6d4,#7c3aed);}
+    .footer{margin-top:14px;color:var(--muted);font-size:13px;display:flex;justify-content:space-between;align-items:center}
+    .raw{max-height:360px;overflow:auto}
+    .copy{display:inline-flex;gap:8px;align-items:center}
+    @media (max-width:900px){.grid{grid-template-columns:1fr;}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Zuno — Health Dashboard</h1>
+        <div class="sub">Endpoint: <span id="endpoint">https://zuno.helloyashparmar.dev/api/health</span></div>
+      </div>
+      <div class="controls">
+        <div class="small">Auto-refresh</div>
+        <label style="display:flex;align-items:center;gap:8px">
+          <input id="autoToggle" type="checkbox" />
+        </label>
+        <button id="refreshBtn" title="Refresh now">🔄 Refresh</button>
+        <button id="copyJson" title="Copy raw JSON">📋 Copy JSON</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="small">Status</div>
+              <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+                <div id="statusBadge" class="badge">—</div>
+                <div class="stat"><span class="label">Uptime</span><span id="uptime" class="value">—</span></div>
+                <div class="stat"><span class="label">Env</span><span id="env" class="value">—</span></div>
+              </div>
+            </div>
+            <div style="text-align:right">
+              <div class="small">Last checked</div>
+              <div id="lastChecked">—</div>
+              <div class="small" style="margin-top:6px" id="tsRaw">—</div>
+            </div>
+          </div>
+
+          <div class="metrics">
+            <div class="metric-card">
+              <div class="small">Hostname</div>
+              <div id="hostname" style="font-weight:700;margin-top:6px">—</div>
+              <div class="small" id="platform">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="small">CPU</div>
+              <div id="cpuCores" style="font-weight:700;margin-top:6px">—</div>
+              <div class="small" id="loadAvg">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="small">Event Loop Delay</div>
+              <div id="evLoop" style="font-weight:700;margin-top:6px">—</div>
+              <div class="small">ms</div>
+            </div>
+
+            <div class="metric-card" style="grid-column:1/4">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <div class="small">Memory</div>
+                  <div id="memSummary" style="font-weight:700;margin-top:6px">—</div>
+                </div>
+                <div style="width:40%">
+                  <div class="progress" aria-hidden="true"><i id="memBar" style="width:1%"></i></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="metric-card" style="grid-column:1/4">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <div class="small">Disk</div>
+                  <div id="diskSummary" style="font-weight:700;margin-top:6px">—</div>
+                </div>
+                <div style="width:40%">
+                  <div class="progress" aria-hidden="true"><i id="diskBar" style="width:1%"></i></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Services</div>
+            <div class="services" id="servicesList">
+              <!-- services will be injected here -->
+            </div>
+          </div>
+
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="small">Raw JSON</div>
+            <div class="small">Format: pretty</div>
+          </div>
+          <div class="raw" style="margin-top:8px"><pre id="rawJson">—</pre></div>
+        </div>
+
+      </div>
+
+      <div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="small">Endpoint Health</div>
+              <div style="font-weight:700;margin-top:6px" id="endpointStatus">—</div>
+            </div>
+            <div style="text-align:right">
+              <div class="small">Auto-refresh interval</div>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+                <input id="interval" type="range" min="5" max="60" value="15" />
+                <div id="intervalLabel" class="small">15s</div>
+              </div>
+            </div>
+          </div>
+
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:12px 0" />
+
+          <div class="small">Last HTTP response</div>
+          <pre id="lastStatus" style="margin-top:8px">—</pre>
+
+          <div class="footer">
+            <div>Made for <strong>Zuno</strong> • Local preview</div>
+            <div class="small">Tip: toggle Auto-refresh for continuous updates</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <div class="small">Quick actions</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+            <button id="openRaw">Open raw JSON in new tab</button>
+            <button id="downloadBtn">Download JSON</button>
+            <button id="clearBtn" class="btn-ghost">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const endpoint = 'https://zuno.helloyashparmar.dev/api/health';
+    const els = {
+      statusBadge: document.getElementById('statusBadge'),
+      uptime: document.getElementById('uptime'),
+      env: document.getElementById('env'),
+      lastChecked: document.getElementById('lastChecked'),
+      tsRaw: document.getElementById('tsRaw'),
+      hostname: document.getElementById('hostname'),
+      platform: document.getElementById('platform'),
+      cpuCores: document.getElementById('cpuCores'),
+      loadAvg: document.getElementById('loadAvg'),
+      evLoop: document.getElementById('evLoop'),
+      memSummary: document.getElementById('memSummary'),
+      memBar: document.getElementById('memBar'),
+      diskSummary: document.getElementById('diskSummary'),
+      diskBar: document.getElementById('diskBar'),
+      servicesList: document.getElementById('servicesList'),
+      rawJson: document.getElementById('rawJson'),
+      endpointStatus: document.getElementById('endpointStatus'),
+      lastStatus: document.getElementById('lastStatus'),
+      autoToggle: document.getElementById('autoToggle'),
+      interval: document.getElementById('interval'),
+      intervalLabel: document.getElementById('intervalLabel'),
+      refreshBtn: document.getElementById('refreshBtn'),
+      copyJson: document.getElementById('copyJson'),
+      openRaw: document.getElementById('openRaw'),
+      downloadBtn: document.getElementById('downloadBtn'),
+      clearBtn: document.getElementById('clearBtn')
+    };
+
+    let autoTimer = null;
+    let lastResponse = null;
+
+    function fmtBytes(b){
+      if (b === null || b === undefined) return '—';
+      const units = ['B','KB','MB','GB','TB']; let i=0; let v=b; while(v>=1024 && i<units.length-1){v/=1024;i++} return v.toFixed(2)+units[i];
+    }
+    function fmtTime(s){
+      // uptime in seconds
+      if (s === null || s === undefined) return '—';
+      const d = Math.floor(s/86400); s%=86400; const h=Math.floor(s/3600); s%=3600; const m=Math.floor(s/60); const sec=Math.floor(s%60);
+      return `${d}d ${h}h ${m}m ${sec}s`;
+    }
+
+    async function fetchHealth(){
+      const start = Date.now();
+      try{
+        const res = await fetch(endpoint, {cache:'no-store'});
+        const ms = Date.now()-start;
+        const txt = await res.text();
+        let json;
+        try{ json = JSON.parse(txt); } catch(e){ json = null; }
+        lastResponse = {status: res.status, ok: res.ok, ms, body: json, text: txt};
+        render(lastResponse);
+      }catch(err){
+        lastResponse = {status: 'ERR', ok:false, ms: null, body: null, text: err.message};
+        render(lastResponse);
+      }
+    }
+
+    function clearUI(){
+      els.statusBadge.textContent='—'; els.statusBadge.className='badge';
+      els.uptime.textContent='—'; els.env.textContent='—'; els.lastChecked.textContent='—'; els.tsRaw.textContent='—';
+      els.hostname.textContent='—'; els.platform.textContent='—'; els.cpuCores.textContent='—'; els.loadAvg.textContent='—'; els.evLoop.textContent='—';
+      els.memSummary.textContent='—'; els.memBar.style.width='1%'; els.diskSummary.textContent='—'; els.diskBar.style.width='1%';
+      els.servicesList.innerHTML=''; els.rawJson.textContent='—'; els.endpointStatus.textContent='—'; els.lastStatus.textContent='—';
+    }
+
+    function render(resp){
+      const now = new Date();
+      els.lastChecked.textContent = now.toLocaleString();
+
+      if (!resp || !resp.ok || !resp.body){
+        els.statusBadge.textContent = 'DOWN'; els.statusBadge.className='badge fail';
+        els.endpointStatus.textContent = resp && resp.status ? `HTTP ${resp.status}` : 'NO RESPONSE';
+        els.lastStatus.textContent = resp && resp.text ? String(resp.text).slice(0,1000) : '—';
+        els.rawJson.textContent = resp && resp.text ? resp.text : '—';
+        return;
+      }
+
+      const body = resp.body;
+      // top status
+      const st = body.status || (resp.ok ? 'ok' : 'unknown');
+      if (st.toLowerCase()==='ok') { els.statusBadge.textContent='OK'; els.statusBadge.className='badge ok' }
+      else { els.statusBadge.textContent=st.toUpperCase(); els.statusBadge.className='badge fail' }
+
+      els.uptime.textContent = fmtTime(Math.round(body.uptime));
+      els.env.textContent = body.env || '—';
+      els.tsRaw.textContent = body.timestamp || '—';
+
+      const sys = body.system || {};
+      els.hostname.textContent = sys.hostname || '—';
+      els.platform.textContent = `${sys.platform || '—'} • ${sys.release || ''} • ${sys.arch || ''}`;
+      els.cpuCores.textContent = (sys.cpu && sys.cpu.cores) ? sys.cpu.cores + ' cores' : '—';
+      els.loadAvg.textContent = sys.cpu ? `1m ${sys.cpu.loadAvg1} • 5m ${sys.cpu.loadAvg5} • 15m ${sys.cpu.loadAvg15}` : '—';
+      els.evLoop.textContent = (sys.eventLoop && sys.eventLoop.delay_ms) ? sys.eventLoop.delay_ms : '—';
+
+      const mem = sys.memory || {};
+      const total = mem.total || 0; const free = mem.free || 0; const used = total - free; const usedPct = total? Math.round((used/total)*100):0;
+      els.memSummary.textContent = `${fmtBytes(used)} used / ${fmtBytes(total)} total (${usedPct}%)`;
+      els.memBar.style.width = Math.max(3, usedPct)+'%';
+
+      const disk = sys.disk || {};
+      const dTotal = disk.size || 0; const dFree = disk.free || 0; const dUsed = dTotal - dFree; const dUsedPct = dTotal? Math.round((dUsed/dTotal)*100):0;
+      els.diskSummary.textContent = `${fmtBytes(dUsed)} used / ${fmtBytes(dTotal)} total (${dUsedPct}%)`;
+      els.diskBar.style.width = Math.max(2, dUsedPct)+'%';
+
+      // services
+      const services = body.services || {};
+      els.servicesList.innerHTML = '';
+      for (const [k,v] of Object.entries(services)){
+        const el = document.createElement('div'); el.className='service';
+        const left = document.createElement('div'); left.innerHTML = `<div style="font-weight:700;text-transform:capitalize">${k}</div><div class="small">${v.server? (v.server.version || '') : (v.projectId || '')}</div>`;
+        const right = document.createElement('div');
+        const sBadge = document.createElement('span'); sBadge.className='badge'; sBadge.textContent = (v.status||'unknown').toUpperCase();
+        if ((v.status||'').toLowerCase()==='ok') sBadge.className='badge ok'; else sBadge.className='badge fail';
+        right.appendChild(sBadge);
+        el.appendChild(left); el.appendChild(right);
+        els.servicesList.appendChild(el);
+      }
+
+      // raw JSON
+      try{ els.rawJson.textContent = JSON.stringify(body, null, 2); } catch(e){ els.rawJson.textContent = String(body); }
+
+      els.endpointStatus.textContent = `HTTP ${resp.status} • ${resp.ms} ms`;
+      els.lastStatus.textContent = `Fetched in ${resp.ms} ms`;
+    }
+
+    function startAuto(){
+      stopAuto();
+      const secs = Number(els.interval.value) || 15;
+      autoTimer = setInterval(fetchHealth, secs*1000);
+    }
+    function stopAuto(){ if (autoTimer) clearInterval(autoTimer); autoTimer = null; }
+
+    // events
+    els.refreshBtn.addEventListener('click', ()=>fetchHealth());
+    els.copyJson.addEventListener('click', ()=>{
+      if (!lastResponse || !lastResponse.body) return navigator.clipboard.writeText('');
+      navigator.clipboard.writeText(JSON.stringify(lastResponse.body, null, 2));
+      els.copyJson.textContent = '✅ Copied'; setTimeout(()=>els.copyJson.textContent='📋 Copy JSON',1200);
+    });
+    els.openRaw.addEventListener('click', ()=>{
+      if (!lastResponse || !lastResponse.body) return;
+      const w = window.open(); w.document.body.style.background='#071126'; w.document.body.style.color='#dff7f0'; const pre = w.document.createElement('pre'); pre.textContent = JSON.stringify(lastResponse.body, null, 2); pre.style.whiteSpace='pre-wrap'; pre.style.padding='16px'; pre.style.fontFamily='monospace'; w.document.body.appendChild(pre);
+    });
+    els.downloadBtn.addEventListener('click', ()=>{
+      if (!lastResponse || !lastResponse.body) return;
+      const blob = new Blob([JSON.stringify(lastResponse.body, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='zuno-health.json'; a.click(); URL.revokeObjectURL(url);
+    });
+    els.clearBtn.addEventListener('click', ()=>{ clearUI(); lastResponse=null });
+
+    els.autoToggle.addEventListener('change', ()=>{
+      if (els.autoToggle.checked) startAuto(); else stopAuto();
+    });
+    els.interval.addEventListener('input', ()=>{ els.intervalLabel.textContent = els.interval.value + 's'; if (els.autoToggle.checked) startAuto(); });
+
+    // initial
+    els.intervalLabel.textContent = els.interval.value + 's';
+    fetchHealth();
+  </script>
+</body>
+</html>

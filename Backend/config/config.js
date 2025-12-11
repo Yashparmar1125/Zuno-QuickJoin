@@ -35,7 +35,23 @@ const validateConfig = () => {
   }
 
   if (missing.length) {
-    throw new Error(`Missing required configuration: ${missing.join(", ")}`);
+    const error = new Error(`Missing required configuration: ${missing.join(", ")}`);
+    console.error("Configuration Error:", error.message);
+    if (process.env.NODE_ENV === 'production') {
+      throw error;
+    } else {
+      console.warn("⚠️  Continuing in development mode despite missing config...");
+    }
+  }
+
+  // Warn about production settings
+  if (process.env.NODE_ENV === 'production') {
+    if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'your_super_secret_jwt_key_change_this_in_production') {
+      console.warn("⚠️  WARNING: Using default JWT_SECRET in production is insecure!");
+    }
+    if (!process.env.ALLOWED_ORIGINS) {
+      console.warn("⚠️  WARNING: ALLOWED_ORIGINS not set. CORS may be too permissive.");
+    }
   }
 };
 
