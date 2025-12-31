@@ -18,7 +18,7 @@
 
 ## 📚 Overview
 
-Zuno is a modern, full-stack video conferencing platform that provides real-time video/audio calls, screen sharing, chat, and meeting management. It combines a beautiful React frontend with a secure Node.js/Express backend, Firebase authentication, Socket.IO for real-time signaling, and WebRTC for peer-to-peer communication..
+Zuno is a modern, full-stack video conferencing platform that provides real-time video/audio calls, screen sharing, chat, and meeting management. It combines a beautiful React frontend with a secure Node.js/Express backend, Firebase authentication, Socket.IO for real-time signaling, and WebRTC for peer-to-peer communication.
 
 ## ✨ Key Features
 
