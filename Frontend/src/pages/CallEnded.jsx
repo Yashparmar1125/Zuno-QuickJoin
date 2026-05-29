@@ -1,241 +1,176 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { CheckCircle2, LogIn, Home, Star, MessageSquare, AlertCircle } from "lucide-react";
+import {
+  CheckCircle2, LogIn, Home, Star, MessageSquare,
+  AlertCircle, Clock, Users, Hash, ArrowRight,
+} from "lucide-react";
 import { submitFeedback } from "../services/feedback";
 import { useAuth } from "../context/AuthContext";
+
+const QUALITY_OPTIONS = [
+  { value: "Excellent", emoji: "🚀", color: "border-zuno-mint bg-zuno-mint-light text-zuno-mint" },
+  { value: "Good", emoji: "👍", color: "border-zuno-blue bg-zuno-blue-light text-zuno-blue" },
+  { value: "Okay", emoji: "😐", color: "border-zuno-amber bg-zuno-amber-light text-zuno-amber" },
+  { value: "Poor", emoji: "😞", color: "border-zuno-red bg-zuno-red-light text-zuno-red" },
+];
+
+const RATING_LABELS = ["", "Poor", "Needs work", "Okay", "Good", "Excellent"];
 
 function CallEnded() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, token } = useAuth();
-  const meetingId = location.state?.meetingId || 'Unknown';
-  const duration = location.state?.duration || '—';
+
+  const meetingId = location.state?.meetingId || "Unknown";
+  const duration = location.state?.duration || "—";
   const participants = location.state?.participants || 1;
 
-  const [showFeedback, setShowFeedback] = useState(true);
-  const [submitted, setSubmitted] = useState(false);
+  const [step, setStep] = useState("feedback"); // "feedback" | "done"
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const [formData, setFormData] = useState({
-    rating: 0,
-    callQuality: "",
-    comments: "",
-  });
-
-  const handleReturnHome = () => {
-    navigate('/');
-  };
-
-  const handleRejoin = () => {
-    navigate(`/meeting/${meetingId}`);
-  };
-
-  const handleSkipFeedback = () => {
-    setShowFeedback(false);
-  };
-
-  const handleRatingClick = (rating) => {
-    setFormData({ ...formData, rating });
-  };
-
-  const handleCallQualityClick = (quality) => {
-    setFormData({ ...formData, callQuality: quality });
-  };
+  const [form, setForm] = useState({ rating: 0, callQuality: "", comments: "" });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
-    if (!formData.rating || !formData.callQuality) {
-      setError("Please provide a rating and call quality assessment");
-      return;
-    }
-
-    if (!user) {
-      setError("Please login to submit feedback");
-      return;
-    }
-
+    if (!form.rating || !form.callQuality) { setError("Please select a rating and call quality."); return; }
+    if (!user) { setError("Please sign in to submit feedback."); return; }
     setLoading(true);
     try {
-      await submitFeedback({
-        meetingId,
-        rating: formData.rating,
-        callQuality: formData.callQuality,
-        comments: formData.comments,
-      }, token);
-      setSubmitted(true);
-      setShowFeedback(false);
+      await submitFeedback({ meetingId, rating: form.rating, callQuality: form.callQuality, comments: form.comments }, token);
+      setStep("done");
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to submit feedback. Please try again.");
-      console.error('Feedback submission error:', err);
-    } finally {
-      setLoading(false);
-    }
+      setError(err.response?.data?.message || err.message || "Failed to submit. Please try again.");
+    } finally { setLoading(false); }
   };
 
   return (
-    <div className="min-h-screen w-full bg-zuno-soft flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 md:p-10 space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="h-14 w-14 rounded-2xl bg-green-100 flex items-center justify-center text-green-600">
-            <CheckCircle2 size={32} strokeWidth={2} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-extrabold text-zuno-charcoal">Call ended</h1>
-            <p className="text-sm text-zuno-charcoal/70">
-              {submitted ? "Thank you for your feedback!" : "You've successfully left the meeting."}
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-zuno-soft flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-lg space-y-4 animate-fade-in">
 
-        <div className="grid sm:grid-cols-3 gap-4 bg-zuno-soft border border-gray-200 rounded-2xl p-4">
-          <div>
-            <div className="text-xs uppercase tracking-wide text-zuno-charcoal/60 font-semibold">Meeting ID</div>
-            <div className="text-base font-bold text-zuno-charcoal mt-1">{meetingId}</div>
-          </div>
-          <div>
-            <div className="text-xs uppercase tracking-wide text-zuno-charcoal/60 font-semibold">Duration</div>
-            <div className="text-base font-bold text-zuno-charcoal mt-1">{duration}</div>
-          </div>
-          <div>
-            <div className="text-xs uppercase tracking-wide text-zuno-charcoal/60 font-semibold">Participants</div>
-            <div className="text-base font-bold text-zuno-charcoal mt-1">
-              {participants} {participants === 1 ? "person" : "people"}
+        {/* ── Summary card ── */}
+        <div className="card p-6">
+          <div className="flex items-center gap-4 mb-5">
+            <div className="w-12 h-12 rounded-2xl bg-zuno-mint-light flex items-center justify-center flex-shrink-0">
+              <CheckCircle2 size={24} className="text-zuno-mint" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-zuno-charcoal">Call ended</h1>
+              <p className="text-sm text-zuno-gray-500">
+                {step === "done" ? "Thanks for your feedback!" : "You've left the meeting."}
+              </p>
             </div>
           </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { icon: Hash, label: "Meeting ID", value: meetingId },
+              { icon: Clock, label: "Duration", value: duration },
+              { icon: Users, label: "Participants", value: `${participants} ${participants === 1 ? "person" : "people"}` },
+            ].map(({ icon: Icon, label, value }) => (
+              <div key={label} className="bg-zuno-gray-50 rounded-xl p-3 text-center">
+                <Icon size={14} className="text-zuno-gray-400 mx-auto mb-1" />
+                <p className="text-2xs text-zuno-gray-500 font-medium uppercase tracking-wide">{label}</p>
+                <p className="text-xs font-bold text-zuno-charcoal mt-0.5 truncate">{value}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {showFeedback && !submitted && (
-          <form onSubmit={handleSubmit} className="space-y-6 border-t border-gray-200 pt-6">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
-                <AlertCircle size={20} />
-                <span className="text-sm">{error}</span>
-              </div>
-            )}
+        {/* ── Feedback card ── */}
+        {step === "feedback" && (
+          <div className="card p-6 animate-slide-up">
+            <h2 className="text-base font-bold text-zuno-charcoal mb-1">How was your call?</h2>
+            <p className="text-xs text-zuno-gray-500 mb-5">Your feedback helps us improve Zuno for everyone.</p>
 
-            {/* Overall Rating */}
-            <div className="space-y-3">
-              <label className="text-lg font-semibold text-zuno-charcoal flex items-center gap-2">
-                <Star size={20} className="text-amber-500" />
-                Overall Rating
-              </label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((rating) => (
-                  <button
-                    key={rating}
-                    type="button"
-                    onClick={() => handleRatingClick(rating)}
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 ${
-                      formData.rating >= rating
-                        ? "bg-amber-500 text-white shadow-lg scale-110"
-                        : "bg-gray-100 text-gray-400 hover:bg-gray-200"
-                    }`}
-                  >
-                    <Star size={24} fill={formData.rating >= rating ? "currentColor" : "none"} />
-                  </button>
-                ))}
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Star rating */}
+              <div>
+                <label className="block text-xs font-semibold text-zuno-gray-700 mb-2">Overall rating</label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map(r => (
+                    <button key={r} type="button" onClick={() => setForm(f => ({ ...f, rating: r }))}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-150 ${form.rating >= r
+                          ? "bg-zuno-amber text-white scale-110 shadow-sm"
+                          : "bg-zuno-gray-100 text-zuno-gray-400 hover:bg-zuno-amber-light hover:text-zuno-amber"
+                        }`}
+                    >
+                      <Star size={18} fill={form.rating >= r ? "currentColor" : "none"} />
+                    </button>
+                  ))}
+                  {form.rating > 0 && (
+                    <span className="text-xs font-semibold text-zuno-gray-600 ml-1">{RATING_LABELS[form.rating]}</span>
+                  )}
+                </div>
               </div>
-              {formData.rating > 0 && (
-                <p className="text-sm text-zuno-charcoal/70">
-                  {formData.rating === 5 && "Excellent!"}
-                  {formData.rating === 4 && "Good"}
-                  {formData.rating === 3 && "Okay"}
-                  {formData.rating === 2 && "Needs Improvement"}
-                  {formData.rating === 1 && "Poor"}
-                </p>
+
+              {/* Call quality */}
+              <div>
+                <label className="block text-xs font-semibold text-zuno-gray-700 mb-2">Call quality</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {QUALITY_OPTIONS.map(({ value, emoji, color }) => (
+                    <button key={value} type="button" onClick={() => setForm(f => ({ ...f, callQuality: value }))}
+                      className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all duration-150 ${form.callQuality === value ? color : "border-zuno-gray-200 text-zuno-gray-600 hover:border-zuno-gray-300 hover:bg-zuno-gray-50"
+                        }`}
+                    >
+                      <span>{emoji}</span> {value}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Comments */}
+              <div>
+                <label className="block text-xs font-semibold text-zuno-gray-700 mb-2">
+                  <MessageSquare size={12} className="inline mr-1" />
+                  Comments <span className="text-zuno-gray-400 font-normal">(optional)</span>
+                </label>
+                <textarea
+                  value={form.comments}
+                  onChange={e => setForm(f => ({ ...f, comments: e.target.value }))}
+                  placeholder="Share any thoughts or suggestions…"
+                  rows={3}
+                  className="input resize-none text-sm"
+                />
+              </div>
+
+              {error && (
+                <div className="flex items-center gap-2 text-xs text-zuno-red bg-zuno-red-light border border-red-200 rounded-lg px-3 py-2.5">
+                  <AlertCircle size={13} /> {error}
+                </div>
               )}
-            </div>
 
-            {/* Call Quality */}
-            <div className="space-y-3">
-              <label className="text-lg font-semibold text-zuno-charcoal">Call Quality</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {["Excellent", "Good", "Okay", "Poor"].map((quality) => (
-                  <button
-                    key={quality}
-                    type="button"
-                    onClick={() => handleCallQualityClick(quality)}
-                    className={`px-4 py-3 rounded-xl border-2 transition-all duration-200 ${
-                      formData.callQuality === quality
-                        ? "border-zuno-blue bg-zuno-blue text-white shadow-md"
-                        : "border-gray-200 text-zuno-charcoal hover:border-zuno-blue/50 hover:bg-zuno-blue/5"
-                    }`}
-                  >
-                    <div className="flex items-center justify-center gap-2">
-                      <Star size={18} className={formData.callQuality === quality ? "text-white" : "text-amber-500"} />
-                      <span className="font-semibold">{quality}</span>
-                    </div>
-                  </button>
-                ))}
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={() => setStep("done")} className="btn-secondary text-sm px-4 py-2.5">
+                  Skip
+                </button>
+                <button type="submit" disabled={loading || !form.rating || !form.callQuality}
+                  className="btn-primary flex-1 justify-center text-sm py-2.5">
+                  {loading ? "Submitting…" : "Submit feedback"}
+                </button>
               </div>
-            </div>
-
-            {/* Comments */}
-            <div className="space-y-3">
-              <label className="text-base font-semibold text-zuno-charcoal flex items-center gap-2">
-                <MessageSquare size={18} className="text-zuno-charcoal/70" />
-                Additional Comments (Optional)
-              </label>
-              <textarea
-                value={formData.comments}
-                onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
-                placeholder="Share your thoughts or suggestions..."
-                rows={4}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-zuno-charcoal placeholder-zuno-charcoal/50 focus:outline-none focus:ring-2 focus:ring-zuno-blue focus:border-transparent transition-all duration-200 resize-none"
-              />
-            </div>
-
-            {/* Submit Buttons */}
-            <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={handleSkipFeedback}
-                className="px-4 py-3 rounded-xl border border-gray-200 text-zuno-charcoal font-semibold hover:bg-gray-50 transition"
-              >
-                Skip Feedback
-              </button>
-              <button
-                type="submit"
-                disabled={loading || !formData.rating || !formData.callQuality}
-                className="flex-1 px-4 py-3 rounded-xl bg-zuno-blue text-white font-semibold hover:bg-zuno-blue-strong transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? "Submitting..." : "Submit Feedback"}
-              </button>
-            </div>
-          </form>
-        )}
-
-        {submitted && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 size={20} />
-              <span className="text-sm font-semibold">Thank you! Your feedback has been submitted successfully.</span>
-            </div>
+            </form>
           </div>
         )}
 
-        <div className="flex flex-wrap gap-3 pt-2 border-t border-gray-200">
-          <button
-            className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-200 text-zuno-charcoal font-semibold hover:bg-gray-50 transition"
-            onClick={handleRejoin}
-          >
-            <LogIn size={18} />
-            Rejoin meeting
-          </button>
-          <button
-            className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-zuno-blue text-white font-semibold hover:bg-zuno-blue-strong transition shadow-md"
-            onClick={handleReturnHome}
-          >
-            <Home size={18} />
-            Return home
-          </button>
-        </div>
+        {step === "done" && (
+          <div className="card p-5 flex items-center gap-3 bg-zuno-mint-light border-zuno-mint/30 animate-scale-in">
+            <CheckCircle2 size={20} className="text-zuno-mint flex-shrink-0" />
+            <p className="text-sm font-semibold text-zuno-charcoal">Feedback submitted — thank you!</p>
+          </div>
+        )}
 
-        <div className="text-sm text-zuno-charcoal/70 text-center">
-          Need help? Visit our <a href="#support" className="text-zuno-blue hover:text-zuno-blue-strong font-semibold">Support Center</a>
+        {/* ── Navigation ── */}
+        <div className="flex gap-3">
+          <button onClick={() => navigate(`/meeting/${meetingId}`)} className="btn-secondary flex-1 justify-center gap-2 py-2.5">
+            <LogIn size={15} /> Rejoin
+          </button>
+          <button onClick={() => navigate("/")} className="btn-primary flex-1 justify-center gap-2 py-2.5">
+            <Home size={15} /> Home
+          </button>
+          <button onClick={() => navigate("/dashboard")} className="btn-secondary flex-1 justify-center gap-2 py-2.5">
+            Dashboard <ArrowRight size={14} />
+          </button>
         </div>
       </div>
     </div>

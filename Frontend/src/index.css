@@ -1,30 +1,302 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900;1,14..32,400;1,14..32,500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Base ─────────────────────────────────────────────────────────────────── */
 @layer base {
-  * {
+
+  *,
+  *::before,
+  *::after {
     box-sizing: border-box;
   }
 
   :root {
-    font-family: 'Inter', 'Open Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
-    background-color: #F6F9FF;
-    color: #1A202C;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  html {
+    height: 100%;
   }
 
   body {
-    @apply bg-[var(--bg,theme(colors.zuno.soft))] text-zuno-charcoal antialiased min-h-screen;
-    margin: 0;
+    @apply bg-zuno-soft text-zuno-charcoal min-h-screen m-0;
   }
 
   a {
     @apply text-inherit no-underline;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold text-zuno-charcoal;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-semibold text-zuno-charcoal tracking-tight;
   }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-zuno-gray-300 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-zuno-gray-400;
+  }
+
+  /* Focus ring */
+  :focus-visible {
+    @apply outline-none ring-2 ring-zuno-blue ring-offset-2;
+  }
+
+  /* Selection */
+  ::selection {
+    @apply bg-zuno-blue-light text-zuno-blue;
+  }
+}
+
+/* ─── Components ────────────────────────────────────────────────────────────── */
+@layer components {
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-semibold transition-all duration-150 select-none cursor-pointer;
+  }
+
+  .btn-primary {
+    @apply btn bg-zuno-blue text-white rounded-lg px-4 py-2.5 text-sm shadow-brand-sm hover:bg-zuno-blue-hover hover:shadow-brand active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply btn bg-white text-zuno-charcoal border border-zuno-gray-200 rounded-lg px-4 py-2.5 text-sm shadow-xs hover:bg-zuno-gray-50 hover:border-zuno-gray-300 active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply btn text-zuno-gray-600 rounded-lg px-3 py-2 text-sm hover:bg-zuno-gray-100 hover:text-zuno-charcoal active:scale-[0.98];
+  }
+
+  .btn-danger {
+    @apply btn bg-zuno-red text-white rounded-lg px-4 py-2.5 text-sm hover:bg-red-600 active:scale-[0.98];
+  }
+
+  .btn-icon {
+    @apply btn rounded-lg p-2 text-zuno-gray-500 hover:bg-zuno-gray-100 hover:text-zuno-charcoal active:scale-[0.95];
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-2xl border border-zuno-gray-200 shadow-card;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-200 hover:shadow-soft hover:-translate-y-0.5 hover:border-zuno-gray-300;
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full rounded-lg border border-zuno-gray-200 bg-white px-3.5 py-2.5 text-sm text-zuno-charcoal placeholder:text-zuno-gray-400 shadow-inner-sm focus:outline-none focus:ring-2 focus:ring-zuno-blue focus:border-transparent transition-all duration-150;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  .badge-blue {
+    @apply badge bg-zuno-blue-light text-zuno-blue;
+  }
+
+  .badge-green {
+    @apply badge bg-zuno-mint-light text-zuno-mint;
+  }
+
+  .badge-amber {
+    @apply badge bg-zuno-amber-light text-zuno-amber;
+  }
+
+  .badge-red {
+    @apply badge bg-zuno-red-light text-zuno-red;
+  }
+
+  .badge-gray {
+    @apply badge bg-zuno-gray-100 text-zuno-gray-600;
+  }
+
+  /* Divider */
+  .divider {
+    @apply border-t border-zuno-gray-200;
+  }
+
+  /* Section label */
+  .section-label {
+    @apply text-xs font-semibold uppercase tracking-widest text-zuno-gray-500;
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply card p-5 flex items-center gap-4;
+  }
+
+  .stat-icon {
+    @apply h-11 w-11 rounded-xl flex items-center justify-center flex-shrink-0;
+  }
+
+  /* Nav item */
+  .nav-item {
+    @apply flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-zuno-gray-600 hover:bg-zuno-gray-100 hover:text-zuno-charcoal transition-all duration-150;
+  }
+
+  .nav-item-active {
+    @apply nav-item bg-zuno-blue-light text-zuno-blue hover:bg-zuno-blue-light hover:text-zuno-blue;
+  }
+
+  /* Meeting control button */
+  .ctrl-btn {
+    @apply w-12 h-12 rounded-full flex items-center justify-center transition-all duration-150 bg-white/10 text-white hover:bg-white/20 active:scale-95;
+  }
+
+  .ctrl-btn-active {
+    @apply ctrl-btn bg-zuno-red hover:bg-red-600;
+  }
+
+  .ctrl-btn-light {
+    @apply w-12 h-12 rounded-full flex items-center justify-center transition-all duration-150 bg-zuno-gray-100 text-zuno-gray-700 hover:bg-zuno-gray-200 active:scale-95;
+  }
+
+  .ctrl-btn-light-active {
+    @apply ctrl-btn-light bg-zuno-blue text-white hover:bg-zuno-blue-hover;
+  }
+
+  /* Toast */
+  .toast {
+    @apply flex items-center gap-3 bg-zuno-navy text-white px-4 py-3 rounded-xl shadow-soft text-sm font-medium animate-slide-up;
+  }
+
+  /* Skeleton */
+  .skeleton {
+    @apply bg-zuno-gray-200 rounded animate-pulse;
+  }
+}
+
+/* ─── Utilities ─────────────────────────────────────────────────────────────── */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .bg-dot-pattern {
+    background-image: var(--tw-gradient-stops);
+  }
+
+  /* Glass morphism */
+  .glass {
+    @apply bg-white/80 backdrop-blur-md border border-white/60;
+  }
+
+  .glass-dark {
+    @apply bg-zuno-navy/80 backdrop-blur-md border border-white/10;
+  }
+
+  /* Gradient text */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-zuno-blue to-blue-400;
+  }
+
+  /* Truncate lines */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Hide scrollbar but keep scroll */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Dot pattern bg */
+  .bg-dots {
+    background-image: radial-gradient(circle, #2563EB18 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(37, 99, 235, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(37, 99, 235, 0.05) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+}
+
+/* ─── Video call specific ───────────────────────────────────────────────────── */
+.video-tile {
+  position: relative;
+  background: #0F172A;
+  border-radius: 16px;
+  overflow: hidden;
+  aspect-ratio: 16/9;
+}
+
+.video-tile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-tile-label {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 4px 10px;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.video-tile-avatar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+}
+
+/* ─── Transitions ───────────────────────────────────────────────────────────── */
+.panel-enter {
+  animation: slideRight 0.25s ease-out;
+}
+
+.modal-enter {
+  animation: scaleIn 0.2s ease-out;
 }
